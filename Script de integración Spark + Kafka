@@ -1,0 +1,20 @@
+# Importación del módulo principal de Spark
+from pyspark.sql import SparkSession
+
+# Creación de la sesión de Spark
+spark = SparkSession.builder.appName("KafkaUNADTest").getOrCreate()
+
+# Lectura del flujo de datos desde Kafka (streaming)
+stream_df = spark.readStream.format("kafka") \
+.option("kafka.bootstrap.servers", "localhost:9092") \
+.option("subscribe", "unad-test") \
+.load()
+
+# Conversión del campo binario 'value' a texto legible
+messages = stream_df.selectExpr("CAST(value AS STRING) as mensaje")
+
+# Escritura del flujo en la consola en modo append
+query = messages.writeStream.outputMode("append").format("console").start()
+
+# Mantiene la aplicación activa escuchando los mensajes
+query.awaitTermination()
